@@ -1,0 +1,45 @@
+(in-package :stumpwm)
+(setf *window-border-style* :thin)
+
+(defun undefine-keys (a-map par-list)  (mapcar #'(lambda (x) (undefine-key a-map x)) (mapcar #'kbd par-list)))
+
+(undefine-keys *root-map* '("a" "e" "g" "C-e" "C-b" "C-a" "C-m" "M-n" "M-p" "C-w" "K" "M-Right" "M-Left" "M-Up" "M-Down" "F4" "F5" "F6" "F7" "F8" "F9" "F10"))
+(undefine-keys *tile-group-root-map* '("space" "C-space"))
+
+(define-key *root-map* (kbd "C-c") "exec qutebrowser --backend webengine")
+(define-key *root-map* (kbd "c") "exec urxvt -bg 'black' -fg 'white' +sb -sl 65535 -b 0 -w 0 -letsp -1 -fn \"xft:bitstream vera sans mono:size=8:antialias=True,xft:unifont\"")
+(define-key *root-map* (kbd "C-k") "kill")(define-key *root-map* (kbd "q") "command-mode")
+
+(defun all-positions (to-find input-string) (all-positions-helper to-find input-string 0))
+(defun all-positions-helper (to-find input-string count)  (cond   ((eql (length input-string) 0) '())   ((eql (schar input-string 0) to-find) (cons count (all-positions-helper to-find (subseq input-string 1) (+ count 1))))   (t (all-positions-helper to-find (subseq input-string 1) (+ count 1)))))
+
+(defun sys-show-info ()
+  (defparameter temp-string1 (run-shell-command "free -h | grep Mem: | sed s/' \\+'/' '/g" t))
+  (defparameter positions1 (all-positions #\Space temp-string1))
+  (defparameter temp-string2 (run-shell-command "acpi" t))
+  (defparameter positions2 (all-positions #\Space temp-string2))
+  (echo-string (current-screen) (concatenate 'string (subseq temp-string2 (caddr positions2) (- (length temp-string2) 1)) " | Volume: " (subseq (run-shell-command "amixer get Master | sed \"s/ /\\n/g\" | grep -m 1 %" t) 1 4) " | Mem: " (subseq temp-string1 (cadr positions1) (cadddr positions1)) " | " (time-format *time-format-string-default*) " | Brightness: " (subseq (run-shell-command "cat /sys/class/backlight/intel_backlight/brightness" t) 0 4)))); " | " (run-shell-command "iw dev wlp1s0 link | grep SSID" ))))
+(defcommand sys-info () ()  (sys-show-info))
+
+(define-key *root-map* (kbd "a") "sys-info")
+
+(defcommand make-louder () ()  "makes the sound louder"  (run-shell-command "amixer -D pulse sset Master 20%+"))
+(defcommand make-quieter () ()  "makes the sound louder"  (run-shell-command "amixer -D pulse sset Master 20%-"))
+(define-key *root-map* (kbd "H-+") "make-louder")
+(define-key *root-map* (kbd "H--") "make-quieter")
+
+(define-key *root-map* (kbd "h") "exec scrot -u /home/dont/stumpwm_screenshots/%Y-%m-%d-%T-screenshot.png")(define-key *root-map* (kbd "H") "exec scrot /home/dont/stumpwm_screenshots/%Y-%m-%d-%T-screenshot.png")
+
+(define-key *root-map* (kbd "y") "exec echo $(($(cat /sys/class/backlight/intel_backlight/brightness)+1000)) > /sys/class/backlight/intel_backlight/brightness")
+(define-key *root-map* (kbd "u") "exec echo $(($(cat /sys/class/backlight/intel_backlight/brightness)-1000)) > /sys/class/backlight/intel_backlight/brightness")
+
+;;groups to list groups/vgroups has other stuff
+(define-key *root-map* (kbd "H-g") "gnew")
+(define-key *root-map* (kbd "H-n") "gnext")
+(define-key *root-map* (kbd "H-p") "gprev")
+(define-key *root-map* (kbd "H-k") "gkill")
+
+(define-key *root-map* (kbd "C-Right") "move-window right")
+(define-key *root-map* (kbd "C-Left") "move-window left")
+(define-key *root-map* (kbd "C-Up") "move-window up")
+(define-key *root-map* (kbd "C-Down") "move-window down")
